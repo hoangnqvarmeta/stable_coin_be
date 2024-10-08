@@ -12,9 +12,37 @@ export class ConfigureMintDto {
   @ApiProperty({
     description: 'Amount',
     type: Number,
-    example: '1000000000000000000',
+    example: 100,
   })
   amount: number;
+}
+export class SetAlllowanceDto {
+  @ApiProperty({
+    description: 'Contract address',
+    type: String,
+    example: '0x123456',
+  })
+  @IsString()
+  @IsNotEmpty()
+  spender: string;
+
+  @ApiProperty({
+    description: 'Amount',
+    type: Number,
+    example: '100',
+  })
+  @IsNotEmpty()
+  amount: number;
+}
+export class CollectionAllowanceDto {
+  @ApiProperty({
+    description: 'Contract address',
+    type: String,
+    example: '0x123456',
+  })
+  @IsString()
+  @IsNotEmpty()
+  spender: string;
 }
 export class MintDto {
   @ApiProperty({
@@ -28,8 +56,8 @@ export class MintDto {
 
   @ApiProperty({
     description: 'Amount',
-    type: String,
-    example: '1000000000000000000',
+    type: Number,
+    example: 100,
   })
   @IsNotEmpty()
   amount: number;
@@ -40,33 +68,32 @@ export class TransferTokenDto {
     type: String,
     example: '0x123456',
   })
+  @IsString()
+  @IsNotEmpty()
   fromAddr: string;
   @ApiProperty({
     description: 'wallet address',
     type: String,
     example: '0x123456',
   })
+  @IsString()
+  @IsNotEmpty()
   toAddr: string;
 
   @ApiProperty({
     description: 'Amount',
-    type: String,
-    example: '1000000000000000000',
+    type: Number,
+    example: 100,
   })
+  @IsNotEmpty()
   amount: number;
 }
 export class BurnTokenDto {
   @ApiProperty({
-    description: 'Contract address',
-    type: String,
-    example: '0x123456',
-  })
-  address: string;
-
-  @ApiProperty({
     description: 'Amount',
-    type: String,
-    example: '1000000000000000000',
+    type: Number,
+    example: 100,
   })
+  @IsNotEmpty()
   amount: number;
 }

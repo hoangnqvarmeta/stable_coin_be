@@ -2,6 +2,8 @@
 import { Injectable } from '@nestjs/common';
 import { ethers, Wallet } from 'ethers';
 import fs from 'fs';
+import Web3 from 'web3';
+import { UsersService } from '../../../users/users.service';
 import { BadRequest } from '../../../utils/response';
 import { TransactionServiceInterface } from '../persistence/transaction-service.interface';
 
@@ -11,19 +13,26 @@ export class EthereumEventService implements TransactionServiceInterface {
   private contract: ethers.Contract;
   private abi: any;
   private signer: ethers.Wallet;
+  private web3: Web3;
 
-  constructor() {
-    this.provider = new ethers.JsonRpcProvider('https://sepolia.drpc.org');
+  constructor(private readonly userService: UsersService) {
+    this.provider = new ethers.JsonRpcProvider(process.env.ETHER_RPC);
     const abi = fs.readFileSync('./smart-contract/USDC.json', 'utf8');
     this.abi = JSON.parse(abi);
     const privateKey = process.env.ETHER_ADMIN_PRIVATE_KEY;
     this.signer = new Wallet(privateKey!, this.provider);
 
     this.contract = new ethers.Contract(
-      '0x3f5d5d379f6B0E6Fc09FBc750e4186B7C5428825',
+      process.env.ETHER_CONTRACT_ADDRESS!,
       this.abi,
       this.signer,
     );
+    this.web3 = new Web3();
+  }
+
+  verifySignature(meesage: string, signature: string, address: string) {
+    const signer = this.web3.eth.accounts.recover(meesage, signature);
+    return signer.toLowerCase() === address.toLowerCase();
   }
   async getTransactionData(txHash: string): Promise<any> {
     try {
@@ -34,7 +43,7 @@ export class EthereumEventService implements TransactionServiceInterface {
       return transaction;
     } catch (error) {
       console.error('Error fetching transaction data:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
   convertToUSDCAmount(amount: number): bigint {
@@ -55,7 +64,7 @@ export class EthereumEventService implements TransactionServiceInterface {
       return this.decodeEvents(events, eventName);
     } catch (error) {
       console.error('Error fetching events:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
 
@@ -76,44 +85,97 @@ export class EthereumEventService implements TransactionServiceInterface {
   createAccount(): ethers.HDNodeWallet {
     return ethers.Wallet.createRandom().connect(this.provider);
   }
-
-  async configureMinter(minter: string, amount: number) {
+  async configureMinter(amount: number) {
+    const minter = await this.signer.getAddress();
+    const value = this.convertToUSDCAmount(amount);
     try {
-      // const amount = this.convertToUSDCAmount(allowAmount);
-      const tx = await this.contract.configureMinter(minter, amount);
+      const tx = await this.contract.configureMinter(minter, value);
       return tx.wait();
     } catch (error) {
       console.error('Error configuring minter:', error);
-      throw error;
+      throw new BadRequest(error.message);
+    }
+  }
+
+  async checkBalanceAndEstimateGas(
+    method: string,
+    params: any[],
+  ): Promise<void> {
+    const address = await this.signer.getAddress();
+    const balance = await this.provider.getBalance(address);
+    console.log('🚀 ~ EthereumEventService ~ balance:', balance);
+
+    try {
+      const estimatedGas = await this.contract.estimateGas[method](...params);
+      console.log('🚀 ~ EthereumEventService ~ estimatedGas:', estimatedGas);
+      if (balance < estimatedGas) {
+        throw new BadRequest('Insufficient balance to cover gas fees');
+      }
+    } catch (error) {
+      console.error(`Error estimating gas for ${method}:`, error);
+      throw new BadRequest(
+        `Failed to estimate gas for ${method}: ${error.message}`,
+      );
     }
   }
 
   async mintUSDC(toAddress: string, amount: number) {
     try {
-      await this.configureMinter(toAddress, amount);
-      const usdcAmount = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.mint(toAddress, usdcAmount);
+      await this.configureMinter(amount);
+      const value = this.convertToUSDCAmount(amount);
+      const tx = await this.contract.mint(toAddress, value);
       const txReceipt = await tx.wait();
-      console.log(
-        '🚀 ~ EthereumEventService ~ mintUSDC ~ txReceipt:',
-        txReceipt,
-      );
-      return txReceipt.hash;
+      return txReceipt;
     } catch (error) {
       console.error('Error minting USDC:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
-
-  async setAllowance(spender: string, amount: number): Promise<boolean> {
+  async getAllowance(spender: string) {
+    const owner = await this.signer.getAddress();
     try {
-      const usdcAmount = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.approve(spender, usdcAmount);
-      await tx.wait();
-      return true;
+      const token = await this.contract.allowance(owner, spender);
+      return token;
     } catch (error) {
       console.error('Error setting allowance:', error);
-      throw error;
+      throw new BadRequest(error.message);
+    }
+  }
+  async setAllowance(spender: string, amount: number) {
+    try {
+      const value = this.convertToUSDCAmount(amount);
+      const user = await this.userService.findOne({
+        publicAddress: spender,
+      });
+      if (!user) throw new BadRequest('User not found');
+
+      const owner = new Wallet(user.privateAddress, this.provider);
+      const contract = new ethers.Contract(
+        process.env.ETHER_CONTRACT_ADDRESS!,
+        this.abi,
+        owner,
+      );
+      const tx = await contract.approve(this.signer.getAddress(), value);
+      return tx.wait();
+    } catch (error) {
+      console.error('Error setting allowance:', error);
+      throw new BadRequest(error.message);
+    }
+  }
+  async collectAllToken(spender: string) {
+    try {
+      const allow = await this.getAllowance(spender);
+      const balance = await this.contract.balanceOf(spender);
+      const value = balance < allow ? balance : allow;
+      const tx = await this.contract.transferFrom(
+        spender,
+        this.signer.getAddress(),
+        value,
+      );
+      return tx.wait();
+    } catch (error) {
+      console.error('Error setting allowance:', error);
+      throw new BadRequest(error.message);
     }
   }
 
@@ -123,26 +185,23 @@ export class EthereumEventService implements TransactionServiceInterface {
     amount: number,
   ): Promise<boolean> {
     try {
-      const usdcAmount = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.transferFrom(fromAddr, toAddr, usdcAmount);
-      const txReceipt = await tx.wait();
-      console.log('🚀 ~ EthereumEventService ~ txReceipt:', txReceipt);
-      return true;
+      const value = this.convertToUSDCAmount(amount);
+      const tx = await this.contract.transferFrom(fromAddr, toAddr, value);
+      return tx.wait();
     } catch (error) {
       console.error('Error transferring USDC:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
 
   async burnUSDC(amount: number): Promise<boolean> {
     try {
-      const usdcAmount = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.burn(usdcAmount);
-      await tx.wait();
-      return true;
+      const value = this.convertToUSDCAmount(amount);
+      const tx = await this.contract.burn(value);
+      return tx.wait();
     } catch (error) {
       console.error('Error burning USDC:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
 
@@ -165,7 +224,7 @@ export class EthereumEventService implements TransactionServiceInterface {
       return null;
     } catch (error) {
       console.error('Error decoding event:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
 
@@ -175,7 +234,7 @@ export class EthereumEventService implements TransactionServiceInterface {
       return blockNumber;
     } catch (error) {
       console.error('Error fetching current block number:', error);
-      throw error;
+      throw new BadRequest(error.message);
     }
   }
 }

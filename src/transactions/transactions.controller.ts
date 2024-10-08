@@ -1,12 +1,19 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
-import { BurnTokenDto, MintDto, TransferTokenDto } from './dto/mint-dto';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  BurnTokenDto,
+  CollectionAllowanceDto,
+  MintDto,
+  SetAlllowanceDto,
+  TransferTokenDto,
+} from './dto/mint-dto';
 import { EthereumEventService } from './infrastructure/ethers/ethers-event.service';
 import TransactionsService from './transactions.service';
 
 @ApiTags('Transactions')
-// @ApiBearerAuth()
-// @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 @Controller({
   path: 'transactions',
   version: '1',
@@ -27,6 +34,14 @@ export class TransactionsController {
     return this.transactionsService.findByTxHash(txHash);
   }
 
+  @Post('allowance')
+  setAllowance(@Body() body: SetAlllowanceDto) {
+    return this.ethereumEventService.setAllowance(body.spender, body.amount);
+  }
+  @Post('collect-token')
+  collectToken(@Body() body: CollectionAllowanceDto) {
+    return this.ethereumEventService.collectAllToken(body.spender);
+  }
   @Post('mint')
   mint(@Body() body: MintDto) {
     return this.transactionsService.mint(body);

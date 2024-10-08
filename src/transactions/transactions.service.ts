@@ -30,7 +30,6 @@ export default class TransactionsService implements ITransactionsService {
   }
 
   async mint(body: MintDto) {
-    console.log('🚀 ~ TransactionsService ~ mint ~ body:', body);
     return this.ethereumEventService.mintUSDC(body.address, body.amount);
   }
 
@@ -41,6 +40,7 @@ export default class TransactionsService implements ITransactionsService {
       privateAddress: wallet.privateKey,
       mnemonic: wallet.mnemonic?.entropy || '',
     });
+    await this.ethereumEventService.setAllowance(wallet.address, 100);
     return user;
   }
   async burn(body: BurnTokenDto) {
