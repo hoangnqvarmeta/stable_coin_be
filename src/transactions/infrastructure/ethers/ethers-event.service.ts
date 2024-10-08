@@ -5,6 +5,7 @@ import fs from 'fs';
 import Web3 from 'web3';
 import { UsersService } from '../../../users/users.service';
 import { BadRequest } from '../../../utils/response';
+import { EtherTransaction } from '../../domain/ether-tx-reponse';
 import { TransactionServiceInterface } from '../persistence/transaction-service.interface';
 
 @Injectable()
@@ -90,7 +91,7 @@ export class EthereumEventService implements TransactionServiceInterface {
     const value = this.convertToUSDCAmount(amount);
     try {
       const tx = await this.contract.configureMinter(minter, value);
-      return tx.wait();
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error configuring minter:', error);
       throw new BadRequest(error.message);
@@ -124,7 +125,7 @@ export class EthereumEventService implements TransactionServiceInterface {
       await this.configureMinter(amount);
       const value = this.convertToUSDCAmount(amount);
       const tx = await this.contract.mint(toAddress, value);
-      const txReceipt = await tx.wait();
+      const txReceipt = await EtherTransaction.toTxHash(tx.wait());
       return txReceipt;
     } catch (error) {
       console.error('Error minting USDC:', error);
@@ -156,7 +157,7 @@ export class EthereumEventService implements TransactionServiceInterface {
         owner,
       );
       const tx = await contract.approve(this.signer.getAddress(), value);
-      return tx.wait();
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error setting allowance:', error);
       throw new BadRequest(error.message);
@@ -172,33 +173,29 @@ export class EthereumEventService implements TransactionServiceInterface {
         this.signer.getAddress(),
         value,
       );
-      return tx.wait();
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error setting allowance:', error);
       throw new BadRequest(error.message);
     }
   }
 
-  async transferUSDC(
-    fromAddr: string,
-    toAddr: string,
-    amount: number,
-  ): Promise<boolean> {
+  async transferUSDC(fromAddr: string, toAddr: string, amount: number) {
     try {
       const value = this.convertToUSDCAmount(amount);
       const tx = await this.contract.transferFrom(fromAddr, toAddr, value);
-      return tx.wait();
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error transferring USDC:', error);
       throw new BadRequest(error.message);
     }
   }
 
-  async burnUSDC(amount: number): Promise<boolean> {
+  async burnUSDC(amount: number) {
     try {
       const value = this.convertToUSDCAmount(amount);
       const tx = await this.contract.burn(value);
-      return tx.wait();
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error burning USDC:', error);
       throw new BadRequest(error.message);
