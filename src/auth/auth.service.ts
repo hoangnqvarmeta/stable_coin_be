@@ -14,7 +14,7 @@ import { AllConfigType } from '../config/config.type';
 import { Session } from '../session/domain/session';
 import { SessionService } from '../session/session.service';
 import { EthereumEventService } from '../transactions/infrastructure/ethers/ethers-event.service';
-import { User } from '../users/domain/User';
+import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { NullableType } from '../utils/types/nullable.type';
 import { LoginResponseDto } from './dto/login-response.dto';
