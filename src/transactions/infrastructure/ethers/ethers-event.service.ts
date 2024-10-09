@@ -195,7 +195,7 @@ export class EthereumEventService {
    */
   /******  7a9c2197-b287-4096-9c78-08e197045108  *******/
   private async sendNativeTransaction(spender: string) {
-    const amountInWei = ethers.parseEther('0.00001');
+    const amountInWei = ethers.parseEther('0.0001');
     const tx = await this.signer.sendTransaction({
       to: spender,
       value: amountInWei,

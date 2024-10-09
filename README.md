@@ -48,6 +48,7 @@
 1. Run migrations
 
    ```bash
+   npm run migration:generate -- src/database/migrations/init
    npm run migration:run
    ```
 
