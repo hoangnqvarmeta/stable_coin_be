@@ -12,8 +12,6 @@ import appConfig from './config/app.config';
 import { AllConfigType } from './config/config.type';
 import databaseConfig from './database/config/database.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
-import { LoggerModule } from './logger/logger.module';
-import { SessionModule } from './session/session.module';
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   useClass: TypeOrmConfigService,
   dataSourceFactory: async (options: DataSourceOptions) => {
@@ -57,7 +55,6 @@ import { UsersModule } from './users/users.module';
       imports: [ConfigModule],
       inject: [ConfigService],
     }),
-    LoggerModule,
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
@@ -72,7 +69,6 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
-    SessionModule,
   ],
 })
 export class AppModule {}
