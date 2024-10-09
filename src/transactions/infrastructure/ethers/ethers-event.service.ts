@@ -92,8 +92,10 @@ export class EthereumEventService implements TransactionServiceInterface {
     const minter = await this.signer.getAddress();
     // const value = this.convertToUSDCAmount(amount);
     try {
-      const tx = await this.contract.configureMinter(minter, MAX_BIG_INT);
-      return EtherTransaction.toTxHash(tx.wait());
+      const tx = await this.contract
+        .configureMinter(minter, MAX_BIG_INT)
+        .then((tx) => tx.wait());
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error configuring minter:', error);
       throw new BadRequest(error.message);
@@ -124,9 +126,14 @@ export class EthereumEventService implements TransactionServiceInterface {
   async mintUSDC(toAddress: string, amount: number) {
     try {
       // await this.configureMinter(amount);
+      const balance = await this.contract.balanceOf(this.signer.address);
+      if (amount > balance)
+        throw new BadRequest('Insufficient balance to mint');
       const value = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.mint(toAddress, value);
-      return EtherTransaction.toTxHash(tx.wait());
+      const tx = await this.contract
+        .mint(toAddress, value)
+        .then((tx) => tx.wait(1));
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error minting USDC:', error);
       throw new BadRequest(error.message);
@@ -148,7 +155,7 @@ export class EthereumEventService implements TransactionServiceInterface {
         publicAddress: spender,
       });
       if (!user) throw new BadRequest('User not found');
-      const amountInEther = '0.0001'; // amount to send in Ether
+      const amountInEther = '0.00001'; // amount to send in Ether
 
       const amountInWei = ethers.parseEther(amountInEther);
       const native = await this.signer.sendTransaction({
@@ -163,8 +170,10 @@ export class EthereumEventService implements TransactionServiceInterface {
         this.abi,
         owner,
       );
-      const tx = await contract.approve(this.signer.getAddress(), MAX_BIG_INT);
-      return EtherTransaction.toTxHash(tx.wait());
+      const tx = await contract
+        .approve(this.signer.getAddress(), MAX_BIG_INT)
+        .then((tx) => tx.wait());
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error setting allowance:', error);
       throw new BadRequest(error.message);
@@ -172,15 +181,12 @@ export class EthereumEventService implements TransactionServiceInterface {
   }
   async collectAllToken(spender: string) {
     try {
-      const allow = await this.getAllowance(spender);
       const balance = await this.contract.balanceOf(spender);
-      const value = balance < allow ? balance : allow;
-      const tx = await this.contract.transferFrom(
-        spender,
-        this.signer.getAddress(),
-        value,
-      );
-      return EtherTransaction.toTxHash(tx.wait());
+      if (balance == 0) throw new BadRequest('No tokens to collect');
+      const tx = await this.contract
+        .transferFrom(spender, this.signer.getAddress(), balance)
+        .then((tx) => tx.wait());
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error setting allowance:', error);
       throw new BadRequest(error.message);
@@ -190,8 +196,10 @@ export class EthereumEventService implements TransactionServiceInterface {
   async transferUSDC(fromAddr: string, toAddr: string, amount: number) {
     try {
       const value = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.transferFrom(fromAddr, toAddr, value);
-      return EtherTransaction.toTxHash(tx.wait());
+      const tx = await this.contract
+        .transferFrom(fromAddr, toAddr, value)
+        .then((tx) => tx.wait());
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error transferring USDC:', error);
       throw new BadRequest(error.message);
@@ -200,9 +208,12 @@ export class EthereumEventService implements TransactionServiceInterface {
 
   async burnUSDC(amount: number) {
     try {
+      const balance = await this.contract.balanceOf(this.signer.address);
+      if (amount > balance)
+        throw new BadRequest('Insufficient balance to burn');
       const value = this.convertToUSDCAmount(amount);
-      const tx = await this.contract.burn(value);
-      return EtherTransaction.toTxHash(tx.wait());
+      const tx = await this.contract.burn(value).then((tx) => tx.wait());
+      return EtherTransaction.toTxHash(tx);
     } catch (error) {
       console.error('Error burning USDC:', error);
       throw new BadRequest(error.message);
