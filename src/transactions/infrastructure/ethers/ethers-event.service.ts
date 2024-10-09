@@ -43,7 +43,7 @@ export class EthereumEventService {
   }
 
   private handleError(error: any, customMessage?: string) {
-    const errorMessage = customMessage || error.message || 'Unknown error';
+    const errorMessage = error.message || customMessage || 'Unknown error';
     console.error(`Error: ${errorMessage}`, error);
     throw new BadRequest(errorMessage);
   }
@@ -159,7 +159,7 @@ export class EthereumEventService {
   async collectAllToken(spender: string) {
     try {
       const balance = await this.contract.balanceOf(spender);
-      if (balance.eq(0)) throw new BadRequest('No tokens to collect');
+      if (balance == 0) throw new BadRequest('No tokens to collect');
 
       const tx = await this.contract.transferFrom(
         spender,

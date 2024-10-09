@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiParam, ApiTags } from '@nestjs/swagger';
-import { User } from '../users/domain/user';
 import { EtherTransactionResponse } from './domain/ether-tx-reponse';
 import {
   BurnTokenDto,
@@ -57,9 +56,6 @@ export class TransactionsController {
     return this.transactionsService.mint(body);
   }
   @Post('create-account')
-  @ApiOkResponse({
-    type: User,
-  })
   createAccount() {
     return this.transactionsService.createAccount();
   }

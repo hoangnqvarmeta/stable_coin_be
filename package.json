@@ -86,7 +86,8 @@
     "source-map-support": "0.5.21",
     "swagger-ui-express": "5.0.1",
     "twitter": "1.7.1",
-    "typeorm": "0.3.20"
+    "typeorm": "0.3.20",
+    "web3": "^4.13.0"
   },
   "devDependencies": {
     "@commitlint/cli": "19.5.0",
