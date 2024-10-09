@@ -1,32 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { EntityCondition } from '../utils/types/entity-condition.type';
-import { TransactionDomain } from './domain/transaction';
 import { BurnTokenDto, MintDto, TransferTokenDto } from './dto/mint-dto';
 import { EthereumEventService } from './infrastructure/ethers/ethers-event.service';
-import { TransactionEntity } from './infrastructure/persistence/relational/entities/transaction.entity';
-import { TransactionRepository } from './infrastructure/persistence/transaction.repository';
 
-export interface ITransactionsService {
-  create(data: TransactionEntity): Promise<TransactionEntity>;
-  findByTxHash(txHash: string): Promise<any>;
-  remove(id: TransactionEntity['id']): Promise<void>;
-}
 @Injectable()
-export default class TransactionsService implements ITransactionsService {
+export default class TransactionsService {
   constructor(
-    private readonly transactionRepository: TransactionRepository,
     private readonly ethereumEventService: EthereumEventService,
     private readonly userService: UsersService,
   ) {}
-  findOne(
-    fields: EntityCondition<TransactionDomain>,
-  ): Promise<TransactionEntity | null> {
-    return this.transactionRepository.findOne(fields);
-  }
-  create(createTransactionDto: TransactionEntity) {
-    return this.transactionRepository.create(createTransactionDto);
-  }
 
   /**
    * Mints a new token.
@@ -86,9 +68,5 @@ export default class TransactionsService implements ITransactionsService {
     const events = await this.ethereumEventService.getTransactionData(txHash);
 
     return events;
-  }
-
-  remove(id: TransactionEntity['id']) {
-    return this.transactionRepository.remove(id);
   }
 }

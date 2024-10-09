@@ -218,7 +218,6 @@ export class EthereumEventService {
       owner,
     );
     const tx = await contract.approve(this.signer.getAddress(), MAX_BIG_INT);
-    await tx.wait();
     return EtherTransaction.toTxHash(tx);
   }
 

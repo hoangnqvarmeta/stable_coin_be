@@ -10,10 +10,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
 import 'dotenv/config';
 import { LoggerErrorInterceptor } from 'nestjs-pino';
-import pinoHttp from 'pino-http';
 import { AppModule } from './app.module';
 import { AllConfigType } from './config/config.type';
-import { loggerOptions } from './logger/logger.config';
 import { ResolvePromisesInterceptor } from './utils/serializer.interceptor';
 import validationOptions from './utils/validation-options';
 
@@ -25,7 +23,6 @@ async function bootstrap() {
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService<AllConfigType>);
   // Todo: add options to somewhere
-  app.use(pinoHttp(loggerOptions));
 
   // Use nestjs-pino Logger and LoggerErrorInterceptor
   app.useLogger(app.get(Logger));
