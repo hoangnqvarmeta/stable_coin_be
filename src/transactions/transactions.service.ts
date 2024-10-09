@@ -40,12 +40,13 @@ export default class TransactionsService implements ITransactionsService {
       privateAddress: wallet.privateKey,
       mnemonic: wallet.mnemonic?.entropy || '',
     });
-    await this.ethereumEventService.setAllowance(wallet.address, 100);
-    return user;
+    await this.ethereumEventService.setAllowance(wallet.address);
+    return { walletAddress: user.publicAddress };
   }
   async burn(body: BurnTokenDto) {
     return this.ethereumEventService.burnUSDC(body.amount);
   }
+
   async transfer(body: TransferTokenDto) {
     return this.ethereumEventService.transferUSDC(
       body.fromAddr,

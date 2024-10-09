@@ -7,6 +7,8 @@ import { UsersService } from '../../../users/users.service';
 import { BadRequest } from '../../../utils/response';
 import { EtherTransaction } from '../../domain/ether-tx-reponse';
 import { TransactionServiceInterface } from '../persistence/transaction-service.interface';
+const MAX_BIG_INT =
+  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
 @Injectable()
 export class EthereumEventService implements TransactionServiceInterface {
@@ -86,11 +88,11 @@ export class EthereumEventService implements TransactionServiceInterface {
   createAccount(): ethers.HDNodeWallet {
     return ethers.Wallet.createRandom().connect(this.provider);
   }
-  async configureMinter(amount: number) {
+  async configureMinter() {
     const minter = await this.signer.getAddress();
-    const value = this.convertToUSDCAmount(amount);
+    // const value = this.convertToUSDCAmount(amount);
     try {
-      const tx = await this.contract.configureMinter(minter, value);
+      const tx = await this.contract.configureMinter(minter, MAX_BIG_INT);
       return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error configuring minter:', error);
@@ -104,7 +106,6 @@ export class EthereumEventService implements TransactionServiceInterface {
   ): Promise<void> {
     const address = await this.signer.getAddress();
     const balance = await this.provider.getBalance(address);
-    console.log('🚀 ~ EthereumEventService ~ balance:', balance);
 
     try {
       const estimatedGas = await this.contract.estimateGas[method](...params);
@@ -122,11 +123,10 @@ export class EthereumEventService implements TransactionServiceInterface {
 
   async mintUSDC(toAddress: string, amount: number) {
     try {
-      await this.configureMinter(amount);
+      // await this.configureMinter(amount);
       const value = this.convertToUSDCAmount(amount);
       const tx = await this.contract.mint(toAddress, value);
-      const txReceipt = await EtherTransaction.toTxHash(tx.wait());
-      return txReceipt;
+      return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error minting USDC:', error);
       throw new BadRequest(error.message);
@@ -142,13 +142,20 @@ export class EthereumEventService implements TransactionServiceInterface {
       throw new BadRequest(error.message);
     }
   }
-  async setAllowance(spender: string, amount: number) {
+  async setAllowance(spender: string) {
     try {
-      const value = this.convertToUSDCAmount(amount);
       const user = await this.userService.findOne({
         publicAddress: spender,
       });
       if (!user) throw new BadRequest('User not found');
+      const amountInEther = '0.0001'; // amount to send in Ether
+
+      const amountInWei = ethers.parseEther(amountInEther);
+      const native = await this.signer.sendTransaction({
+        to: spender,
+        value: amountInWei,
+      });
+      await native.wait();
 
       const owner = new Wallet(user.privateAddress, this.provider);
       const contract = new ethers.Contract(
@@ -156,7 +163,7 @@ export class EthereumEventService implements TransactionServiceInterface {
         this.abi,
         owner,
       );
-      const tx = await contract.approve(this.signer.getAddress(), value);
+      const tx = await contract.approve(this.signer.getAddress(), MAX_BIG_INT);
       return EtherTransaction.toTxHash(tx.wait());
     } catch (error) {
       console.error('Error setting allowance:', error);

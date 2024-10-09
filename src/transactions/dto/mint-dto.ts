@@ -25,14 +25,6 @@ export class SetAlllowanceDto {
   @IsString()
   @IsNotEmpty()
   spender: string;
-
-  @ApiProperty({
-    description: 'Amount',
-    type: Number,
-    example: '100',
-  })
-  @IsNotEmpty()
-  amount: number;
 }
 export class CollectionAllowanceDto {
   @ApiProperty({

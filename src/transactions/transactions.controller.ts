@@ -1,11 +1,7 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiParam,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { ApiOkResponse, ApiParam, ApiTags } from '@nestjs/swagger';
+import { User } from '../users/domain/user';
+import { EtherTransactionResponse } from './domain/ether-tx-reponse';
 import {
   BurnTokenDto,
   CollectionAllowanceDto,
@@ -15,11 +11,10 @@ import {
 } from './dto/mint-dto';
 import { EthereumEventService } from './infrastructure/ethers/ethers-event.service';
 import TransactionsService from './transactions.service';
-import { EtherTransactionResponse } from './domain/ether-tx-reponse';
 
 @ApiTags('Transactions')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
+// @ApiBearerAuth()
+// @UseGuards(AuthGuard('jwt'))
 @Controller({
   path: 'transactions',
   version: '1',
@@ -45,7 +40,7 @@ export class TransactionsController {
     type: EtherTransactionResponse,
   })
   setAllowance(@Body() body: SetAlllowanceDto) {
-    return this.ethereumEventService.setAllowance(body.spender, body.amount);
+    return this.ethereumEventService.setAllowance(body.spender);
   }
   @Post('collect-token')
   @ApiOkResponse({
@@ -63,7 +58,7 @@ export class TransactionsController {
   }
   @Post('create-account')
   @ApiOkResponse({
-    type: EtherTransactionResponse,
+    type: User,
   })
   createAccount() {
     return this.transactionsService.createAccount();
