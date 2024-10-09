@@ -12,7 +12,6 @@ import appConfig from './config/app.config';
 import { AllConfigType } from './config/config.type';
 import databaseConfig from './database/config/database.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
-import { HomeModule } from './home/home.module';
 import { LoggerModule } from './logger/logger.module';
 import { SessionModule } from './session/session.module';
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
@@ -22,8 +21,8 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   },
 });
 
-import { UsersModule } from './users/users.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -74,7 +73,6 @@ import { TransactionsModule } from './transactions/transactions.module';
       inject: [ConfigService],
     }),
     SessionModule,
-    HomeModule,
   ],
 })
 export class AppModule {}
