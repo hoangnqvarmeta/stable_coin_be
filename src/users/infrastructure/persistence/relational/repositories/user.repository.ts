@@ -9,10 +9,9 @@ import {
   Repository,
 } from 'typeorm';
 import { User } from '../../../../domain/user';
+import { QueryUserDto } from '../../../../dto/query-user.dto';
 import { UserEntity } from '../entities/user.entity';
 import { UserMapper } from '../mappers/user.mapper';
-import { QueryUserDto } from '../../../../dto/query-user.dto';
-import { getStartDateForQuicktimeFilter } from '@/utils/enums/quickTimeFilter.dto';
 
 export type QueryUserOptions = {
   unAuth: boolean;
@@ -61,15 +60,6 @@ export class UserRelationalRepository implements UserRepository {
   ): Promise<[User[], count: number]> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
     if (query.filters) {
-      if (query.filters.time) {
-        const startDate = getStartDateForQuicktimeFilter(query.filters?.time);
-
-        if (startDate) {
-          queryBuilder.andWhere('nft_log.createdAt >= :startDate', {
-            startDate,
-          });
-        }
-      }
       if (query.filters.startDate) {
         queryBuilder.andWhere('user.createdAt >= :startDate', {
           startDate: query.filters.startDate.toISOString(),

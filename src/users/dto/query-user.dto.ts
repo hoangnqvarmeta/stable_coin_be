@@ -2,25 +2,15 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type, plainToInstance } from 'class-transformer';
 import {
   IsDate,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
-import { QuickTimeFilterEnum } from '../../utils/enums/quickTimeFilter.dto';
 import { User } from '../domain/user';
 
 export class FilterUserDto {
-  @ApiPropertyOptional({
-    type: QuickTimeFilterEnum,
-    example: QuickTimeFilterEnum.last24hours,
-  })
-  @IsOptional()
-  @IsEnum(QuickTimeFilterEnum, { message: 'quickTimeFilterNotValid' })
-  time?: QuickTimeFilterEnum;
-
   @ApiPropertyOptional({
     type: Date,
     nullable: true,

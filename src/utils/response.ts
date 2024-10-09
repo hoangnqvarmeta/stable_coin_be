@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResponseArrayData } from './dto/response-array-data.dto';
 import {
   BadRequestException,
   HttpStatus,
@@ -27,12 +26,6 @@ export class ErrorResponse {
   })
   code: string;
 }
-
-export const responseArrayData = <T>(data: T): ResponseArrayData<T> => {
-  return {
-    data,
-  };
-};
 
 export class BaseResponse {
   @ApiProperty({ type: String, example: 'OK' })
