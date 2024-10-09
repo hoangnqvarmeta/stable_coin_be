@@ -42,7 +42,7 @@
 1. Install dependency
 
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 1. Run migrations

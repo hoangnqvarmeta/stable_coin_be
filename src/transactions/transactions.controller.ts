@@ -28,11 +28,6 @@ export class TransactionsController {
     private readonly ethereumEventService: EthereumEventService,
   ) {}
 
-  /**
-   * Retrieves a transaction by its hash.
-   * @param txHash - The transaction hash (TxHash) to search for.
-   * @returns The transaction data corresponding to the provided hash.
-   */
   @Get(':txHash')
   @ApiOperation({ summary: 'Get transaction by hash' })
   @ApiParam({
@@ -54,11 +49,6 @@ export class TransactionsController {
     return this.transactionsService.findByTxHash(txHash);
   }
 
-  /**
-   * Set the allowance for a specific token spender.
-   * @param body - Contains the spender address for setting the allowance.
-   * @returns A response indicating the allowance has been set.
-   */
   @Post('allowance')
   @ApiOperation({ summary: 'Set token allowance for a spender' })
   @ApiBody({
@@ -75,11 +65,6 @@ export class TransactionsController {
     return this.ethereumEventService.setAllowance(body.spender);
   }
 
-  /**
-   * Collect all tokens for a specified allowance.
-   * @param body - Contains the spender address for collecting tokens.
-   * @returns A response indicating the collection was successful.
-   */
   @Post('collect-token')
   @ApiOperation({ summary: 'Collect all allowed tokens for a spender' })
   @ApiBody({
@@ -96,29 +81,20 @@ export class TransactionsController {
     return this.ethereumEventService.collectAllToken(body.spender);
   }
 
-  /**
-   * Mints a new token based on the provided minting details.
-   * @param body - Minting details including token type and quantity.
-   * @returns A response indicating the minting was successful.
-   */
   @Post('mint')
-  @ApiOperation({ summary: 'Mint new tokens' })
+  @ApiOperation({ summary: 'Mint USDC for a given address' })
   @ApiBody({
     type: MintDto,
-    description: 'Details of the tokens to mint, including type and quantity.',
+    description: 'Details of the dto to mint, including address and quantity.',
   })
   @ApiOkResponse({
     type: EtherTransactionResponse,
-    description: 'New tokens successfully minted.',
+    description: 'Tokens minted for the specified address.',
   })
   mint(@Body() body: MintDto): Promise<EtherTransactionResponse | undefined> {
     return this.transactionsService.mint(body);
   }
 
-  /**
-   * Creates a new account on the Ethereum blockchain.
-   * @returns A response with the details of the created account.
-   */
   @Post('create-account')
   @ApiOperation({ summary: 'Create a new Ethereum account' })
   @ApiOkResponse({
@@ -128,11 +104,6 @@ export class TransactionsController {
     return this.transactionsService.createAccount();
   }
 
-  /**
-   * Transfer tokens from one account to another.
-   * @param body - Transfer details including recipient address, amount, and token type.
-   * @returns A response indicating the transfer was successful.
-   */
   @Post('transfer')
   @ApiOperation({ summary: 'Transfer tokens to another address' })
   @ApiBody({
@@ -150,16 +121,11 @@ export class TransactionsController {
     return this.transactionsService.transfer(body);
   }
 
-  /**
-   * Burns tokens from the caller's account.
-   * @param body - Details of the token to burn including token ID and amount.
-   * @returns A response indicating the tokens were successfully burned.
-   */
   @Post('burn')
-  @ApiOperation({ summary: 'Burn tokens' })
+  @ApiOperation({ summary: 'Burn USDC ' })
   @ApiBody({
     type: BurnTokenDto,
-    description: 'Details of the token to burn, including token ID and amount.',
+    description: 'Burn USDC of tresure account amount.',
   })
   @ApiOkResponse({
     type: EtherTransactionResponse,
