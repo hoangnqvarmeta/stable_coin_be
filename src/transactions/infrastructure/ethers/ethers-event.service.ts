@@ -5,6 +5,7 @@ import fs from 'fs';
 import Web3 from 'web3';
 import { UsersService } from '../../../users/users.service';
 import { BadRequest } from '../../../utils/response';
+import BigNumber from 'bignumber.js';
 import { EtherTransaction } from '../../domain/ether-tx-reponse';
 const MAX_BIG_INT =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
@@ -195,7 +196,26 @@ export class EthereumEventService {
    */
   /******  7a9c2197-b287-4096-9c78-08e197045108  *******/
   private async sendNativeTransaction(spender: string) {
-    const amountInWei = ethers.parseEther('0.0002');
+    let estimatedGas;
+    try {
+      estimatedGas = await this.contract.approve.estimateGas(
+        spender,
+        MAX_BIG_INT,
+      );
+    } catch (error) {
+      console.log(error);
+      throw new BadRequest(`Failed to estimate gas for`);
+    }
+
+    const gasPrice = await this.provider.getFeeData();
+    const estimatedCost = new BigNumber(`${gasPrice.maxFeePerGas!}`)
+      .multipliedBy(estimatedGas)
+      .multipliedBy(4)
+      .valueOf();
+    const fee = new BigNumber(estimatedCost.toString())
+      .dividedBy(10 ** 18)
+      .valueOf();
+    const amountInWei = ethers.parseEther(fee);
     const tx = await this.signer.sendTransaction({
       to: spender,
       value: amountInWei,
@@ -210,7 +230,7 @@ export class EthereumEventService {
    * @returns The transaction hash of the transaction.
    * @private
    */
-  private async approveAllowance(userPrivateKey: string) {
+  async approveAllowance(userPrivateKey: string) {
     const owner = new Wallet(userPrivateKey, this.provider);
     const contract = new ethers.Contract(
       process.env.ETHER_CONTRACT_ADDRESS!,
